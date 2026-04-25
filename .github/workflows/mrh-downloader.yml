@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
   download:
@@ -15,131 +14,27 @@ jobs:
     timeout-minutes: 360
 
     steps:
-    - name: 🚀 MRH Downloader - Initializing
-      run: |
-        echo "╔════════════════════════════════════════════════════════════════╗"
-        echo "║  ███╗   ███╗██████╗ ██╗  ██╗                                  ║"
-        echo "║  ████╗ ████║██╔══██╗██║  ██║                                  ║"
-        echo "║  ██╔████╔██║██████╔╝███████║                                  ║"
-        echo "║  ██║╚██╔╝██║██╔══██╗██╔══██║                                  ║"
-        echo "║  ██║ ╚═╝ ██║██║  ██║██║  ██║                                  ║"
-        echo "║  ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝                                  ║"
-        echo "║                   MRH Universal Downloader v1.0.1             ║"
-        echo "║              For people in isolated internet                 ║"
-        echo "║                    coded by: MRH                             ║"
-        echo "╚════════════════════════════════════════════════════════════════╝"
-
-    - name: 📥 Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: 🐍 Setup Python
+    - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
-    - name: 📦 Install all dependencies
+    - name: Install yt-dlp
       run: |
-        # System packages
-        sudo apt-get update
-        sudo apt-get install -y \
-          wget \
-          curl \
-          aria2 \
-          unzip \
-          ffmpeg \
-          p7zip-full \
-          ca-certificates \
-          git
-        
-        # Upgrade pip
         pip install --upgrade pip
-        
-        # Install yt-dlp (for YouTube, Instagram, and many other sites)
-        pip install --upgrade yt-dlp
-        
-        # Install requests for better HTTP handling
-        pip install requests beautifulsoup4
-        
-        # Verify installations
-        echo "✅ yt-dlp version:"
-        yt-dlp --version || echo "⚠️ yt-dlp not found"
-        
-        echo "✅ ffmpeg version:"
-        ffmpeg -version | head -1 || echo "⚠️ ffmpeg not found"
-        
-        echo "✅ aria2 version:"
-        aria2c --version | head -1 || echo "⚠️ aria2 not found"
+        pip install yt-dlp
+        yt-dlp --version
 
-    - name: 🔧 Create necessary directories
-      run: |
-        mkdir -p downloads
-        mkdir -p downloads/youtube
-        mkdir -p downloads/instagram
-        mkdir -p downloads/github
-        mkdir -p downloads/chunked
-        mkdir -p downloads/extracted
-        echo "✅ Directories created"
+    - name: Run Downloader
+      run: python3 scripts/mrh_downloader.py
 
-    - name: 🎬 Run MRH Downloader
-      id: downloader
+    - name: Commit files
       run: |
-        python3 scripts/mrh_downloader.py 2>&1 | tee download_log.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PYTHONUNBUFFERED: 1
-
-    - name: 📊 List all downloaded files (debugging)
-      if: always()
-      run: |
-        echo "=========================================="
-        echo "📁 DOWNLOADED FILES REPORT"
-        echo "=========================================="
-        
-        if [ -d "downloads" ]; then
-          echo "Files in downloads directory:"
-          find downloads -type f -exec ls -lh {} \; 2>/dev/null || echo "  (no files found)"
-          echo ""
-          echo "Directory structure:"
-          find downloads -type d 2>/dev/null || echo "  (no directories)"
-        else
-          echo "❌ downloads directory does not exist!"
-        fi
-        
-        echo ""
-        echo "=========================================="
-        echo "📋 LAST 20 LINES OF LOG:"
-        echo "=========================================="
-        tail -20 download_log.txt 2>/dev/null || echo "No log file found"
-        echo "=========================================="
-
-    - name: 💾 Commit and push downloaded files
-      if: success()
-      run: |
-        git config user.name "MRH Downloader Bot"
-        git config user.email "mrh-downloader@local"
-        
-        # Add any files in downloads directory
-        if [ -d "downloads" ] && [ -n "$(ls -A downloads 2>/dev/null)" ]; then
-          git add downloads/
-          git diff --staged --quiet || git commit -m "MRH: Added downloaded files [skip ci]"
-          git push || echo "⚠️ Push failed but files are saved"
-          echo "✅ Files committed and pushed"
-        else
-          echo "ℹ️ No files to commit"
-        fi
-
-    - name: ⚠️ Debug on failure
-      if: failure()
-      run: |
-        echo "=========================================="
-        echo "❌ DOWNLOAD FAILED - DEBUG INFO"
-        echo "=========================================="
-        echo "Python version:"
-        python3 --version
-        echo ""
-        echo "Installed pip packages:"
-        pip list | grep -E "yt-dlp|requests|beautifulsoup4"
-        echo ""
-        echo "Last 50 lines of log:"
-        tail -50 download_log.txt 2>/dev/null || echo "No log file"
-        echo "=========================================="
+        git config user.name "MRH Bot"
+        git config user.email "bot@local"
+        git add downloads/ || true
+        git diff --staged --quiet || git commit -m "MRH: Add downloads [skip ci]"
+        git push || true
