@@ -1,0 +1,55 @@
+name: MRH Universal Downloader v1.0.1
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: MRH Downloader
+      run: |
+        echo "╔════════════════════════════════════════════════════════════════╗"
+        echo "║  ███╗   ███╗██████╗ ██╗  ██╗                                  ║"
+        echo "║  ████╗ ████║██╔══██╗██║  ██║                                  ║"
+        echo "║  ██╔████╔██║██████╔╝███████║                                  ║"
+        echo "║  ██║╚██╔╝██║██╔══██╗██╔══██║                                  ║"
+        echo "║  ██║ ╚═╝ ██║██║  ██║██║  ██║                                  ║"
+        echo "║  ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝                                  ║"
+        echo "║                   MRH Universal Downloader v1.0.1             ║"
+        echo "║              For people in isolated internet                 ║"
+        echo "║                    coded by: MRH                             ║"
+        echo "╚════════════════════════════════════════════════════════════════╝"
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget curl aria2 unzip ffmpeg
+        pip install yt-dlp
+
+    - name: Run Downloader
+      run: python3 scripts/mrh_downloader.py
+
+    - name: Commit Files
+      run: |
+        git config user.name "MRH Downloader"
+        git config user.email "mrh@local"
+        git add downloads/ || true
+        git diff --staged --quiet || git commit -m "MRH: Downloads [skip ci]"
+        git push || true
