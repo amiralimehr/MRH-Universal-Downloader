@@ -1,3 +1,4 @@
+
 name: MRH Universal Downloader
 
 on:
@@ -17,14 +18,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       
-    - name: Setup yt-dlp with full options
-      uses: AnimMouse/setup-yt-dlp@v3
+    - name: Setup Python
+      uses: actions/setup-python@v5
       with:
-        aria2: true          # فعال کردن دانلود چندبخشی برای سرعت
-        ejs-node: true       # پردازش چالش جاوااسکریپت یوتیوب (حل مشکل)
-        ffmpeg: true         # نصب FFmpeg برای ادغام صدا و تصویر
-      
-    - name: Create directories
+        python-version: '3.11'
+        
+    - name: Install yt-dlp
+      run: |
+        pip install --upgrade yt-dlp
+        yt-dlp --version
+        
+    - name: Create folders
       run: |
         mkdir -p downloads/youtube
         mkdir -p downloads/instagram
@@ -43,71 +47,78 @@ jobs:
       run: |
         URL=$(echo "${{ steps.msg.outputs.full }}" | grep -oP 'dl-yt:\s*\Khttps?://[^\s]+' | head -1)
         echo "🎬 YouTube: $URL"
+        
         cd downloads/youtube
         
         if [[ "${{ steps.msg.outputs.full }}" == *"(mp3)"* ]]; then
-          echo "🎵 Downloading audio..."
-          yt-dlp -x --audio-format mp3 --audio-quality 0 \
-                 --add-header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-                 --retries 5 --fragment-retries 5 --sleep-requests 2 \
-                 "$URL"
+          echo "🎵 Downloading audio only..."
+          yt-dlp -x --audio-format mp3 --audio-quality 0 --no-playlist "$URL"
         else
           echo "🎥 Downloading video..."
-          yt-dlp -f "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]" \
-                 --merge-output-format mp4 \
-                 --add-header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-                 --retries 5 --fragment-retries 5 --sleep-requests 2 \
-                 "$URL"
+          yt-dlp -f bestvideo[height<=720]+bestaudio/best[height<=720] --merge-output-format mp4 --no-playlist "$URL"
         fi
+        
         cd ../..
+        echo "✅ YouTube download completed"
         
     - name: Download from Instagram
       if: contains(steps.msg.outputs.full, 'dl-ig:')
       run: |
         URL=$(echo "${{ steps.msg.outputs.full }}" | grep -oP 'dl-ig:\s*\Khttps?://[^\s]+' | head -1)
         echo "📸 Instagram: $URL"
+        
         cd downloads/instagram
         yt-dlp --no-playlist "$URL"
         cd ../..
+        echo "✅ Instagram download completed"
         
     - name: Download from GitHub
       if: contains(steps.msg.outputs.full, 'dl-gh:')
       run: |
         URL=$(echo "${{ steps.msg.outputs.full }}" | grep -oP 'dl-gh:\s*\Khttps?://[^\s]+' | head -1)
         echo "🐙 GitHub: $URL"
+        
         cd downloads/github
         curl -L -O "$URL"
         cd ../..
+        echo "✅ GitHub download completed"
         
-    - name: Download direct links
+    - name: Download direct link
       if: contains(steps.msg.outputs.full, 'dl:') && !contains(steps.msg.outputs.full, 'dl-yt:') && !contains(steps.msg.outputs.full, 'dl-ig:') && !contains(steps.msg.outputs.full, 'dl-gh:')
       run: |
-        URLS=$(echo "${{ steps.msg.outputs.full }}" | sed 's/^dl: //')
+        URLS=$(echo "${{ steps.msg.outputs.full }}" | grep -oP 'dl:\s*\K.*')
+        
         cd downloads/direct
+        
         for URL in $URLS; do
           FILENAME=$(basename "$URL" | cut -d '?' -f1)
           [ -z "$FILENAME" ] && FILENAME="file_$(date +%H%M%S)"
-          echo "⬇️ $FILENAME"
+          echo "⬇️ Downloading: $FILENAME"
           curl -L -o "$FILENAME" "$URL"
         done
+        
         cd ../..
+        echo "✅ Direct downloads completed"
         
     - name: Stop command
       if: contains(steps.msg.outputs.full, 'dl-stop')
       run: |
-        echo "🛑 Stopped"
+        echo "🛑 Emergency stop activated"
         exit 0
         
     - name: Show results
       run: |
         echo ""
-        echo "=== 📁 DOWNLOADED FILES ==="
-        find downloads -type f -exec ls -lh {} \; 2>/dev/null || echo "No files"
+        echo "=========================================="
+        echo "📁 DOWNLOADED FILES:"
+        echo "=========================================="
+        find downloads -type f -exec ls -lh {} \; 2>/dev/null || echo "No files found"
+        echo "=========================================="
         
     - name: Commit files
       run: |
-        git config user.name "MRH Bot"
-        git config user.email "bot@local"
+        git config user.name "MRH Downloader"
+        git config user.email "mrh@downloader.local"
         git add downloads/ || true
-        git diff --staged --quiet || git commit -m "MRH: Downloads [skip ci]"
+        git diff --staged --quiet || git commit -m "MRH: Downloads completed [skip ci]"
         git push || true
