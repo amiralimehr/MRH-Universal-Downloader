@@ -1,4 +1,4 @@
-<p align="center">
+<p align="center"> 
   <img src="https://img.shields.io/badge/Version-1.0.2-red?style=for-the-badge&logo=github">
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&logo=opensourceinitiative">
   <img src="https://img.shields.io/badge/Made%20by-MRH-green?style=for-the-badge&logo=github">
