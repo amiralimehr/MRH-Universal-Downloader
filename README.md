@@ -18,7 +18,7 @@
 
 > اگر این ابزار به شما کمک کرد / If this tool helped you:
 
-**BNB (BEP-20) - Ethereum - Arbitrum - Base:**  
+**BNB (BEP-20) - Ethereum - Arbitrum - Base:*
 `0x3A90B058E51deeA95dd8912b4bA71c4b159Ec582`
 
 **USDT / USDC / DAI (BEP-20 / ERC-20 / Polygon):**  
