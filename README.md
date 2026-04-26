@@ -162,7 +162,7 @@ dl: https://raw.githubusercontent.com/sample/test-file/main/sample.txt
 
 ### Step 5: Transfer File to Your Device
 - **Computer:** Click file → Download
-- **Mobile:** GitHub app → Open file → Download
+- **Mobile:** GitHub app → Open filea → Download
 
 ---
 
